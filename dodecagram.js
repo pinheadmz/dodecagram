@@ -6,8 +6,10 @@ class Synth {
   constructor() {
     this.ctx = new AudioContext();
 
+    this.basePitch = 110;
+
     this.osc1 = this.ctx.createOscillator();
-    this.osc1.frequency.value = 110;
+    this.osc1.frequency.value = this.basePitch;
     this.osc1.type = 'sine';
 
     this.osc2 = this.ctx.createOscillator();
@@ -26,6 +28,12 @@ class Synth {
 
     this.mxr  = this.ctx.createChannelMerger(2);
 
+    this.asdr = this.ctx.createGain();
+    this.asdr.gain.value = 0;
+    this.att = 0.01;
+    this.hold = 0.3;
+    this.rel = 0.4;
+
     this.out = this.ctx.createGain();
     this.out.gain.value = 0.1;
 
@@ -34,7 +42,8 @@ class Synth {
     this.lfo1.connect(this.lfoGain);
     this.lfoGain.connect(this.lpf.frequency);
     this.mxr.connect(this.lpf);
-    this.lpf.connect(this.out);
+    this.lpf.connect(this.asdr);
+    this.asdr.connect(this.out);
     this.out.connect(this.ctx.destination);
   }
 
@@ -42,5 +51,13 @@ class Synth {
     this.osc1.start(0);
     this.osc2.start(0);
     this.lfo1.start(0);
+  }
+
+  hit(note) {
+    const f = this.basePitch * (2 ** (note / 12));
+    this.osc1.frequency.value = f;
+    this.osc2.frequency.value = f * 2;
+    this.asdr.gain.linearRampToValueAtTime(1, this.att);
+    this.asdr.gain.setTargetAtTime(0, this.hold, this.rel);
   }
 }

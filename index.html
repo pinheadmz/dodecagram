@@ -7,7 +7,22 @@
   </head>
   <body>
     <button id='on'>on</button> <br>
-    <button id='test'>test</button> <br>
+
+    <div id=keyboard>
+      <button>0</button>
+      <button>1</button>
+      <button>2</button>
+      <button>3</button>
+      <button>4</button>
+      <button>5</button>
+      <button>6</button>
+      <button>7</button>
+      <button>8</button>
+      <button>9</button>
+      <button>10</button>
+      <button>11</button>
+      <button>12</button>
+    </div>
 
     <script type="text/javascript" src="dodecagram.js"></script>
     <script type="text/javascript">
@@ -16,11 +31,12 @@
       const on = document.getElementById('on');
       on.addEventListener('mousedown', (e) => {
         synth = new Synth();
+        synth.start();
       });
 
-      const test = document.getElementById('test');
-      test.addEventListener('mousedown', (e) => {
-        synth.start();
+      const keyboard = document.getElementById('keyboard');
+      keyboard.addEventListener('mousedown', (e) => {
+        synth.hit(parseInt(e.target.innerHTML, 10));
       });
     </script>
   </body>
