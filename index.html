@@ -6,9 +6,8 @@
     <link rel="stylesheet" type="text/css" href="dodecagram.css" />
   </head>
   <body>
-    <button id='on'>on</button> <br>
 
-    <div id=keyboard>
+    <div id="keyboard">
       <button>0</button>
       <button>1</button>
       <button>2</button>
@@ -28,15 +27,15 @@
     <script type="text/javascript">
       let synth;
 
-      const on = document.getElementById('on');
-      on.addEventListener('mousedown', (e) => {
-        synth = new Synth();
-        synth.start();
-      });
-
       const keyboard = document.getElementById('keyboard');
       keyboard.addEventListener('mousedown', (e) => {
-        synth.hit(parseInt(e.target.innerHTML, 10));
+        if (!synth) {
+          synth = new Synth();
+          synth.start();
+        }
+
+        if (e.target.tagName == 'BUTTON')
+          synth.hit(parseInt(e.target.innerHTML, 10));
       });
     </script>
   </body>
