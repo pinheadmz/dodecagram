@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dodecagram</title>
+
+    <link rel="stylesheet" type="text/css" href="dodecagram.css" />
+  </head>
+  <body>
+    <button id='on'>on</button> <br>
+    <button id='test'>test</button> <br>
+
+    <script type="text/javascript" src="dodecagram.js"></script>
+    <script type="text/javascript">
+      let synth;
+
+      const on = document.getElementById('on');
+      on.addEventListener('mousedown', (e) => {
+        synth = new Synth();
+      });
+
+      const test = document.getElementById('test');
+      test.addEventListener('mousedown', (e) => {
+        synth.start();
+      });
+    </script>
+  </body>
+</html>
