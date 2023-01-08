@@ -71,6 +71,7 @@ class Star {
     this.synth = null;
     this.centerX;
     this.centerY;
+    this.r;
 
     window.addEventListener('resize', () => {
       this.resize();
@@ -92,18 +93,19 @@ class Star {
     this.canvas.width = this.canvas.height;
     this.centerX = this.canvas.width / 2;
     this.centerY = this.canvas.height / 2;
+    this.r = (this.canvas.width / 2) - 4;
     this.draw();
   }
 
   draw() {
     // Outer circle
-    const r = (this.canvas.width / 2) - 4;
-
     this.ctx.lineWidth = 4;
     this.ctx.strokeStyle = '#2d002f';
+    this.ctx.fillStyle = 'black';
     this.ctx.beginPath();
-    this.ctx.arc(this.centerX, this.centerY, r, 0, 2 * Math.PI);
+    this.ctx.arc(this.centerX, this.centerY, this.r, 0, 2 * Math.PI);
     this.ctx.stroke();
+    this.ctx.fill();
 
     // Star
     this.ctx.strokeStyle = '#ffff00';
@@ -111,9 +113,9 @@ class Star {
     this.ctx.translate(this.centerX, this.centerY);
     for (let i = 1; i < 13; i++) {
       this.ctx.beginPath();
-      this.ctx.moveTo(0, 0 + r);
+      this.ctx.moveTo(0, 0 + this.r);
       this.ctx.rotate(Math.PI - (Math.PI / 6));
-      this.ctx.lineTo(0, 0 + r);
+      this.ctx.lineTo(0, 0 + this.r);
       this.ctx.stroke();
     }
     this.ctx.restore();
@@ -124,11 +126,40 @@ class Star {
   }
 
   click(x, y) {
+    if (!this.synth)
+      return;
+
+    // Compute sector
     const opp = y - this.centerY;
     const adj = x - this.centerX;
     const angle = Math.atan2(opp, adj) * 180 / Math.PI;
     const note = (Math.round(angle / 180 * 6) + 15) % 12;
-    if (this.synth)
-      this.synth.hit(note);
+
+    // Fill point
+    const grd = this.ctx.createRadialGradient(0, 0, 5, 0, 0, this.r);
+    grd.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    grd.addColorStop(1, 'rgba(250, 250, 0, 1)');
+    this.ctx.fillStyle = grd;
+    this.ctx.save();
+    this.ctx.translate(this.centerX, this.centerY);
+    this.ctx.rotate(Math.PI + (Math.PI * (note + 6) / 6));
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, 0 - this.r);
+    // angle is 360 / 24
+    this.ctx.arc(0, 0 - this.r, this.r, Math.PI / 2.5, Math.PI / 1.75);
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.restore();
+
+    // Clear point after release
+    setTimeout(
+      () => {
+        this.draw();
+      },
+      this.synth.rel * 1000
+    );
+
+    // Play!
+    this.synth.hit(note);
   }
 }
