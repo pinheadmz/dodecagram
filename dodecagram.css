@@ -2,11 +2,3 @@ body {
   background-color:  black;
   color: white;
 }
-
-#keyboard > button {
-  background-color: #eee;
-  cursor: pointer;
-  font-weight: bold;
-  height: 50px;
-  width: 50px;
-}

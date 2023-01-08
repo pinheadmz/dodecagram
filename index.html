@@ -7,36 +7,26 @@
   </head>
   <body>
 
-    <div id="keyboard">
-      <button>0</button>
-      <button>1</button>
-      <button>2</button>
-      <button>3</button>
-      <button>4</button>
-      <button>5</button>
-      <button>6</button>
-      <button>7</button>
-      <button>8</button>
-      <button>9</button>
-      <button>10</button>
-      <button>11</button>
-      <button>12</button>
+    <div style="text-align: center">
+      <canvas id="canvas"></canvas>
     </div>
 
     <script type="text/javascript" src="dodecagram.js"></script>
     <script type="text/javascript">
+      const star = new Star(
+        document.getElementById('canvas'),
+        window
+      );
+
       let synth;
+      document.body.addEventListener('mousedown', () => {
+        if (synth)
+          return;
 
-      const keyboard = document.getElementById('keyboard');
-      keyboard.addEventListener('mousedown', (e) => {
-        if (!synth) {
-          synth = new Synth();
-          synth.start();
-        }
-
-        if (e.target.tagName == 'BUTTON')
-          synth.hit(parseInt(e.target.innerHTML, 10));
-      });
+        synth = new Synth();
+        synth.start();
+        star.bind(synth);
+      })
     </script>
   </body>
 </html>

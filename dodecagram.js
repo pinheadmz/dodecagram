@@ -61,3 +61,74 @@ class Synth {
     this.env.gain.setTargetAtTime(0, this.hold, this.rel);
   }
 }
+
+class Star {
+  constructor(canvas, window) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.window =  window;
+
+    this.synth = null;
+    this.centerX;
+    this.centerY;
+
+    window.addEventListener('resize', () => {
+      this.resize();
+    });
+
+    this.canvas.addEventListener('mousedown', (e) => {
+      this.click(
+        e.pageX - this.canvas.offsetLeft,
+        e.pageY - this.canvas.offsetTop
+      );
+    });
+
+    this.resize();
+  }
+
+  resize() {
+    const d = Math.min(window.innerHeight, window.innerWidth);
+    this.canvas.height = d - 30;
+    this.canvas.width = this.canvas.height;
+    this.centerX = this.canvas.width / 2;
+    this.centerY = this.canvas.height / 2;
+    this.draw();
+  }
+
+  draw() {
+    // Outer circle
+    const r = (this.canvas.width / 2) - 4;
+
+    this.ctx.lineWidth = 4;
+    this.ctx.strokeStyle = '#2d002f';
+    this.ctx.beginPath();
+    this.ctx.arc(this.centerX, this.centerY, r, 0, 2 * Math.PI);
+    this.ctx.stroke();
+
+    // Star
+    this.ctx.strokeStyle = '#ffff00';
+    this.ctx.save();
+    this.ctx.translate(this.centerX, this.centerY);
+    for (let i = 1; i < 13; i++) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, 0 + r);
+      this.ctx.rotate(Math.PI - (Math.PI / 6));
+      this.ctx.lineTo(0, 0 + r);
+      this.ctx.stroke();
+    }
+    this.ctx.restore();
+  }
+
+  bind(synth) {
+    this.synth = synth;
+  }
+
+  click(x, y) {
+    const opp = y - this.centerY;
+    const adj = x - this.centerX;
+    const angle = Math.atan2(opp, adj) * 180 / Math.PI;
+    const note = (Math.round(angle / 180 * 6) + 15) % 12;
+    if (this.synth)
+      this.synth.hit(note);
+  }
+}
