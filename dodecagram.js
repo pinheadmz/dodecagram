@@ -32,7 +32,7 @@ class Synth {
     this.env.gain.value = 0;
     this.att = 0.01;
     this.hold = 0.3;
-    this.rel = 0.4;
+    this.rel = 4;
 
     this.out = this.ctx.createGain();
     this.out.gain.value = 0.1;
@@ -60,6 +60,10 @@ class Synth {
     this.env.gain.linearRampToValueAtTime(1, this.att);
     this.env.gain.setTargetAtTime(0, this.hold, this.rel);
   }
+
+  noteLength() {
+    return this.att + this.hold + this.rel;
+  }
 }
 
 class Star {
@@ -69,9 +73,10 @@ class Star {
     this.window =  window;
 
     this.synth = null;
-    this.centerX;
-    this.centerY;
-    this.r;
+    this.centerX = 0;
+    this.centerY = 0;
+    this.r = 0;
+    this.grd = this.ctx.createRadialGradient(0, 0, 0, 0, 0, 0);
 
     window.addEventListener('resize', () => {
       this.resize();
@@ -94,6 +99,12 @@ class Star {
     this.centerX = this.canvas.width / 2;
     this.centerY = this.canvas.height / 2;
     this.r = (this.canvas.width / 2) - 4;
+
+    // Gradient for point fill
+    this.grd = this.ctx.createRadialGradient(0, 0, this.r / 4, 0, 0, this.r);
+    this.grd.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    this.grd.addColorStop(1, 'rgba(250, 250, 0, 1)');
+
     this.draw();
   }
 
@@ -136,17 +147,13 @@ class Star {
     const note = (Math.round(angle / 180 * 6) + 15) % 12;
 
     // Fill point
-    const grd = this.ctx.createRadialGradient(0, 0, 5, 0, 0, this.r);
-    grd.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    grd.addColorStop(1, 'rgba(250, 250, 0, 1)');
-    this.ctx.fillStyle = grd;
+    this.ctx.fillStyle = this.grd;
     this.ctx.save();
     this.ctx.translate(this.centerX, this.centerY);
     this.ctx.rotate(Math.PI + (Math.PI * (note + 6) / 6));
     this.ctx.beginPath();
     this.ctx.moveTo(0, 0 - this.r);
-    // angle is 360 / 24
-    this.ctx.arc(0, 0 - this.r, this.r, Math.PI / 2.5, Math.PI / 1.75);
+    this.ctx.arc(0, 0 - this.r, this.r, 5 * Math.PI / 12, 7 * Math.PI / 12);
     this.ctx.closePath();
     this.ctx.fill();
     this.ctx.restore();
@@ -156,7 +163,7 @@ class Star {
       () => {
         this.draw();
       },
-      this.synth.rel * 1000
+      this.synth.noteLength() * 1000
     );
 
     // Play!
