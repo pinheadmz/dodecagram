@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8" />
     <title>Dodecagram</title>
 
     <link rel="stylesheet" type="text/css" href="dodecagram.css" />
@@ -13,19 +14,23 @@
 
     <script type="text/javascript" src="dodecagram.js"></script>
     <script type="text/javascript">
+      const canvas = document.getElementById('canvas');
       const star = new Star(
-        document.getElementById('canvas'),
+        canvas,
         window
       );
 
       let synth;
-      document.body.addEventListener('mousedown', () => {
+      canvas.addEventListener('mousedown', (e) => {
         if (synth)
           return;
 
         synth = new Synth();
         synth.start();
         star.bind(synth);
+
+        // propogate event so first touch triggers an action
+        star.click(e);
       })
     </script>
   </body>

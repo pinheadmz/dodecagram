@@ -2,19 +2,81 @@
 /* eslint "no-unused-vars": off */
 'use strict';
 
+const waveforms = {
+  'sine':     '∿',
+  'triangle': '△',
+  'square':   '◻︎',
+  'sawtooth': '⩘'
+};
+
+const octaves = {
+   1: '𝄢',
+   2: '𝄡',
+   3: '𝄞'
+};
+
+class Osc {
+  constructor(options) {
+    this.ctx = options.ctx;
+    this.osc = this.ctx.createOscillator();
+    this.basef = 55; // root
+
+    // Available settings
+    this.waves = options.waves;
+    this.octaves = [1, 2, 3];
+
+    // Current selections
+    this.wave = this.waves[0];
+    this.octave = this.octaves[0];
+  }
+
+  setWave(n) {
+    this.wave = this.waves[n % this.waves.length];
+    this.osc.type = this.wave;
+  }
+
+  setOctave(n) {
+    this.octave = this.octaves[n % this.octaves.length];
+  }
+
+  setNote(note) {
+    const f = this.basef * (2 ** (note / 12));
+    this.osc.frequency.value = f * this.octave;
+  }
+
+  connect(dest, output, input) {
+    this.osc.connect(dest, output, input);
+  }
+
+  start(when) {
+    this.osc.start(when);
+  }
+
+  getOptions() {
+    const list = [];
+    for (const wave of this.waves)
+      list.push([waveforms[wave], this.wave === wave]);
+    for (const octave of this.octaves)
+      list.push([octaves[octave], this.octave === octave]);
+
+    return list;
+  }
+}
+
 class Synth {
   constructor() {
     this.ctx = new AudioContext();
 
     this.basePitch = 55;
-    this.osc1oct = 1;
-    this.osc2oct = 2;
 
-    this.osc1 = this.ctx.createOscillator();
-    this.osc1.type = 'sine';
-
-    this.osc2 = this.ctx.createOscillator();
-    this.osc2.type = 'sawtooth';
+    this.osc1 = new Osc({
+      ctx: this.ctx,
+      waves: ['sine', 'triangle', 'square']
+    });
+    this.osc2 = new Osc({
+      ctx: this.ctx,
+      waves: ['sawtooth', 'triangle', 'square']
+    });
 
     this.lfo1 = this.ctx.createOscillator();
     this.lfo1.type = 'triangle';
@@ -32,7 +94,7 @@ class Synth {
     this.env.gain.value = 0;
     this.att = 0.01;
     this.hold = 0.3;
-    this.rel = 4;
+    this.rel = 0.5;
 
     this.out = this.ctx.createGain();
     this.out.gain.value = 0.1;
@@ -54,9 +116,8 @@ class Synth {
   }
 
   hit(note) {
-    const f = this.basePitch * (2 ** (note / 12));
-    this.osc1.frequency.value = f * this.osc1oct;
-    this.osc2.frequency.value = f * this.osc2oct;
+    this.osc1.setNote(note);
+    this.osc2.setNote(note);
     this.env.gain.linearRampToValueAtTime(1, this.att);
     this.env.gain.setTargetAtTime(0, this.hold, this.rel);
   }
@@ -72,6 +133,8 @@ class Star {
     this.ctx = canvas.getContext('2d');
     this.window =  window;
 
+    this.editMode = false;
+
     this.synth = null;
     this.centerX = 0;
     this.centerY = 0;
@@ -83,10 +146,7 @@ class Star {
     });
 
     this.canvas.addEventListener('mousedown', (e) => {
-      this.click(
-        e.pageX - this.canvas.offsetLeft,
-        e.pageY - this.canvas.offsetTop
-      );
+      this.click(e);
     });
 
     this.resize();
@@ -109,6 +169,9 @@ class Star {
   }
 
   draw() {
+    // reset
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
     // Outer circle
     this.ctx.lineWidth = 4;
     this.ctx.strokeStyle = '#2d002f';
@@ -130,22 +193,93 @@ class Star {
       this.ctx.stroke();
     }
     this.ctx.restore();
+
+    if (this.editMode)
+      this.drawEditMode();
+  }
+
+  drawEditMode() {
+    const fontsize = this.canvas.height / 20;
+    this.ctx.font = `${fontsize}px monospace`;
+    this.ctx.fillStyle = 'white';
+    this.ctx.textAlign = 'left';
+    this.ctx.fillText('Osc. 1', 0, fontsize);
+    this.ctx.textAlign = 'right';
+    this.ctx.fillText('Osc. 2', this.canvas.width, fontsize);
+    this.ctx.textAlign = 'center';
+
+    this.ctx.save();
+    this.ctx.translate(this.centerX, this.centerY);
+    this.ctx.rotate(Math.PI / 12);
+
+    const opts = this.synth.osc1.getOptions()
+                 .concat(this.synth.osc2.getOptions().reverse());
+    for (const [symb, selected] of opts) {
+      if (selected) {
+        this.ctx.font = `${fontsize * 2}px bold monospace`;
+        this.ctx.fillStyle = 'green';
+      } else {
+        this.ctx.font = `${fontsize}px monospace`;
+        this.ctx.fillStyle = 'white';
+      }
+      this.ctx.fillText(symb, 0, 0 + this.r);
+      this.ctx.rotate(Math.PI / 6);
+    }
+
+    this.ctx.restore();
   }
 
   bind(synth) {
     this.synth = synth;
   }
 
-  click(x, y) {
+  toggleEditMode() {
+    this.editMode = !this.editMode;
+    this.draw();
+  }
+
+  click(e) {
     if (!this.synth)
       return;
 
-    // Compute sector
+    const x = e.pageX - this.canvas.offsetLeft;
+    const y = e.pageY - this.canvas.offsetTop;
+
+    // Compute distance from center
     const opp = y - this.centerY;
     const adj = x - this.centerX;
-    const angle = Math.atan2(opp, adj) * 180 / Math.PI;
-    const note = (Math.round(angle / 180 * 6) + 15) % 12;
+    const dis = Math.sqrt(opp**2 + adj**2);
 
+    // Center button
+    if (dis < this.r / 4) {
+      this.toggleEditMode();
+      return;
+    }
+
+    const angle = Math.atan2(opp, adj) * 180 / Math.PI;
+    if (this.editMode)
+      this.selectOption((Math.ceil(angle / 180 * 6) + 14) % 12);
+    else
+      this.selectNote((Math.round(angle / 180 * 6) + 15) % 12);
+  }
+
+  selectOption(opt) {
+    const osc = opt < 6
+                ? this.synth.osc2
+                : this.synth.osc1;
+    const sel = opt > 5
+                ? opt - 6
+                : 5 - opt;
+
+    if (sel < 3)
+      osc.setWave(sel);
+    else
+      osc.setOctave(sel - 3);
+
+    this.draw();
+  }
+
+  selectNote(note) {
     // Fill point
     this.ctx.fillStyle = this.grd;
     this.ctx.save();
