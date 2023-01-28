@@ -37,9 +37,9 @@
         const note = keyNotes.indexOf(e.key);
         if (note >= 0) {
           if (star.editMode)
-            star.selectOption(note % 12);
+            star.selectOption(parseInt(note / 12), (note + 9) % 12 * 30);
           else
-            star.selectNote(note);
+            star.selectNote((note + 9) % 12);
           return;
         }
         if (e.key === 'Enter')

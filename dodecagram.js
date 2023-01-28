@@ -12,7 +12,27 @@ const waveforms = {
 const octaves = {
    1: '𝄢',
    2: '𝄡',
-   4: '𝄞'
+   3: '𝄞'
+};
+
+const modSpeeds = {
+  min: 0,
+  max: 12,
+  inc: 1,
+  def: 0
+};
+
+const filtFreqs = {
+  min: 100,
+  max: 10000,
+  inc: 10,
+  def: 3700
+};
+
+const knobs = {
+  'MODSPEED': 0,
+  'FILTFREQ': 1,
+  'OSC': 2
 };
 
 class Osc {
@@ -23,7 +43,7 @@ class Osc {
 
     // Available settings
     this.waves = options.waves;
-    this.octaves = [1, 2, 4];
+    this.octaves = [1, 2, 3];
 
     // Current selections
     this.wave = this.waves[0];
@@ -79,14 +99,15 @@ class Synth {
     });
 
     this.lfo1 = this.ctx.createOscillator();
-    this.lfo1.type = 'triangle';
-    this.lfo1.frequency.value = 1.0;
+    this.lfo1.type = 'sine';
+    this.lfo1.frequency.value = modSpeeds.def;
     this.lfoGain = this.ctx.createGain();
-    this.lfoGain.gain.value = 600;
+    this.lfoGain.gain.value = modSpeeds.def * 1000;
 
     this.lpf  = this.ctx.createBiquadFilter();
-    this.lpf.frequency.value = 1000;
     this.lpf.type = 'lowpass';
+    this.lpf.frequency.value = filtFreqs.def;
+    this.lpf.Q.value = 1;
 
     this.mxr  = this.ctx.createChannelMerger(2);
 
@@ -97,7 +118,7 @@ class Synth {
     this.rel = 0.5;
 
     this.out = this.ctx.createGain();
-    this.out.gain.value = 0.1;
+    this.out.gain.value = 0.25;
 
     this.osc1.connect(this.mxr, 0, 0);
     this.osc2.connect(this.mxr, 0, 1);
@@ -183,12 +204,47 @@ class Star {
     this.ctx.translate(this.centerX, this.centerY);
     for (let i = 1; i < 13; i++) {
       this.ctx.beginPath();
-      this.ctx.moveTo(0, 0 + this.r);
+      this.ctx.moveTo(0, this.r);
       this.ctx.rotate(Math.PI - (Math.PI / 6));
-      this.ctx.lineTo(0, 0 + this.r);
+      this.ctx.lineTo(0, this.r);
       this.ctx.stroke();
     }
     this.ctx.restore();
+
+    // Get knob values
+    let modSpeed = modSpeeds.def;
+    let filtFreq = filtFreqs.def;
+    if (this.synth) {
+      modSpeed = this.synth.lfo1.frequency.value;
+      filtFreq = this.synth.lpf.frequency.value;
+    }
+
+    // Modulation Speed
+    {
+      const pct = (modSpeed - modSpeeds.min) / (modSpeeds.max - modSpeeds.min);
+      this.ctx.strokeStyle = '#ff0000';
+      this.ctx.save();
+      this.ctx.translate(this.centerX, this.centerY);
+      this.ctx.beginPath();
+      this.ctx.rotate(pct * 2 * Math.PI);
+      this.ctx.arc(0, 2 * this.r / -3, this.r / 16, 0, 2 * Math.PI);
+      this.ctx.stroke();
+      this.ctx.restore();
+    }
+
+    // Filter Cutoff Frequency
+    {
+      const filtFreqPos = Math.sqrt(filtFreq - filtFreqs.min) / filtFreqs.inc;
+      const pct = filtFreqPos / 12;
+      this.ctx.strokeStyle = '#0000ff';
+      this.ctx.save();
+      this.ctx.translate(this.centerX, this.centerY);
+      this.ctx.beginPath();
+      this.ctx.rotate(pct * 2 * Math.PI);
+      this.ctx.arc(0, this.r / -2.75, this.r / 16, 0, 2 * Math.PI);
+      this.ctx.stroke();
+      this.ctx.restore();
+    }
 
     if (this.editMode)
       this.drawEditMode();
@@ -218,7 +274,7 @@ class Star {
         this.ctx.font = `${fontsize}px monospace`;
         this.ctx.fillStyle = 'white';
       }
-      this.ctx.fillText(symb, 0, 0 + this.r);
+      this.ctx.fillText(symb, 0, this.r);
       this.ctx.rotate(Math.PI / 6);
     }
 
@@ -244,22 +300,54 @@ class Star {
     // Compute distance from center
     const opp = y - this.centerY;
     const adj = x - this.centerX;
-    const dis = Math.sqrt(opp**2 + adj**2);
+    const dis = this.r / Math.sqrt(opp**2 + adj**2);
 
     // Center button
-    if (dis < this.r / 4) {
+    if (dis > 3.75) {
       this.toggleEditMode();
       return;
     }
 
+    // Knobs
+    let knob = knobs.OSC;
+    if (dis > 1.2)
+      knob = knobs.MODSPEED;
+    if (dis > 2.0)
+      knob = knobs.FILTFREQ;
+
     const angle = Math.atan2(opp, adj) * 180 / Math.PI;
     if (this.editMode)
-      this.selectOption((Math.ceil(angle / 180 * 6) + 14) % 12);
+      this.selectOption(knob, angle);
     else
       this.selectNote((Math.round(angle / 180 * 6) + 15) % 12);
   }
 
-  selectOption(opt) {
+  selectOption(knob, angle) {
+    switch (knob) {
+      case knobs.OSC: {
+        const opt = (Math.ceil(angle / 180 * 6) + 14) % 12;
+        this.setOsc(opt);
+        break;
+      }
+      case knobs.MODSPEED: {
+        const opt = (Math.round(angle / 180 * 6) + 15) % 12;
+        this.setModSpeed(opt);
+        break;
+      }
+      case knobs.FILTFREQ: {
+        const opt = (Math.round(angle / 180 * 6) + 15) % 12;
+        this.setFiltFreq(opt);
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+
+    this.draw();
+  }
+
+  setOsc(opt) {
     const osc = opt < 6
                 ? this.synth.osc2
                 : this.synth.osc1;
@@ -271,8 +359,21 @@ class Star {
       osc.setWave(sel);
     else
       osc.setOctave(sel - 3);
+  }
 
-    this.draw();
+  setModSpeed(opt) {
+    if (this.synth) {
+      this.synth.lfo1.frequency.value = modSpeeds.min + (opt * modSpeeds.inc);
+      this.synth.lfoGain.gain.value = modSpeeds.min + (opt * modSpeeds.inc) * 1000;
+    }
+  }
+
+  setFiltFreq(opt) {
+    if (this.synth) {
+      this.synth.lpf.frequency.value =
+        filtFreqs.min +
+        ((opt * filtFreqs.inc) ** 2);
+    }
   }
 
   selectNote(note) {
