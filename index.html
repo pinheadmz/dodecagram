@@ -14,24 +14,46 @@
 
     <script type="text/javascript" src="dodecagram.js"></script>
     <script type="text/javascript">
+      let synth;
+
       const canvas = document.getElementById('canvas');
       const star = new Star(
         canvas,
         window
       );
 
-      let synth;
       canvas.addEventListener('mousedown', (e) => {
+        startSynth()
+        star.click(e);
+      });
+
+      window.addEventListener('keydown', (e) => {
+        startSynth();
+        const keyNotes =
+          '1234567890-=' + // full octave
+          'qwertyuiop[]' + // full octave
+          'asdfghjkl;\'' + // partial
+          'zxcvbnm,./';    // even less
+        const note = keyNotes.indexOf(e.key);
+        if (note >= 0) {
+          if (star.editMode)
+            star.selectOption(note % 12);
+          else
+            star.selectNote(note);
+          return;
+        }
+        if (e.key === 'Enter')
+          star.toggleEditMode();
+      });
+
+      function startSynth() {
         if (synth)
           return;
 
         synth = new Synth();
         synth.start();
         star.bind(synth);
-
-        // propogate event so first touch triggers an action
-        star.click(e);
-      })
+      }
     </script>
   </body>
 </html>

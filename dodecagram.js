@@ -12,18 +12,18 @@ const waveforms = {
 const octaves = {
    1: '𝄢',
    2: '𝄡',
-   3: '𝄞'
+   4: '𝄞'
 };
 
 class Osc {
   constructor(options) {
     this.ctx = options.ctx;
     this.osc = this.ctx.createOscillator();
-    this.basef = 55; // root
+    this.basef = 110; // root
 
     // Available settings
     this.waves = options.waves;
-    this.octaves = [1, 2, 3];
+    this.octaves = [1, 2, 4];
 
     // Current selections
     this.wave = this.waves[0];
@@ -143,10 +143,6 @@ class Star {
 
     window.addEventListener('resize', () => {
       this.resize();
-    });
-
-    this.canvas.addEventListener('mousedown', (e) => {
-      this.click(e);
     });
 
     this.resize();
