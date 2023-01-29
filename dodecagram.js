@@ -93,10 +93,12 @@ class Synth {
       ctx: this.ctx,
       waves: ['sine', 'triangle', 'square']
     });
+    this.osc1.setWave(2);
     this.osc2 = new Osc({
       ctx: this.ctx,
       waves: ['sawtooth', 'triangle', 'square']
     });
+    this.osc1.setOctave(2);
 
     this.lfo1 = this.ctx.createOscillator();
     this.lfo1.type = 'sine';
@@ -291,9 +293,16 @@ class Star {
   }
 
   orientation(e) {
-    const {gamma} = e;
-    const opt = Math.abs(gamma) / 90 * 12;
-    this.setFiltFreq(opt);
+    const {beta, gamma} = e;
+    // eslint-disable-next-line no-nested-ternary
+    const betaTrimmed = beta < 0
+                        ? 0
+                        : beta > 90
+                          ? 90
+                          : beta;
+    this.setModSpeed((betaTrimmed / 90) * 12);
+    this.setFiltFreq(((gamma + 90) / 180) * 12);
+
     this.draw();
   }
 
