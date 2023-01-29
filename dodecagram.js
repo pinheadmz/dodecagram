@@ -290,6 +290,13 @@ class Star {
     this.draw();
   }
 
+  orientation(e) {
+    const {gamma} = e;
+    const opt = Math.abs(gamma) / 90 * 12;
+    this.setFiltFreq(opt);
+    this.draw();
+  }
+
   click(e) {
     if (!this.synth)
       return;
@@ -363,8 +370,12 @@ class Star {
 
   setModSpeed(opt) {
     if (this.synth) {
-      this.synth.lfo1.frequency.value = modSpeeds.min + (opt * modSpeeds.inc);
-      this.synth.lfoGain.gain.value = modSpeeds.min + (opt * modSpeeds.inc) * 1000;
+      this.synth.lfo1.frequency.value =
+        modSpeeds.min +
+        (opt * modSpeeds.inc);
+      this.synth.lfoGain.gain.value =
+        modSpeeds.min +
+        (opt * modSpeeds.inc) * 1000;
     }
   }
 

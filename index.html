@@ -2,6 +2,11 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no" />
     <title>Dodecagram</title>
 
     <link rel="stylesheet" type="text/css" href="dodecagram.css" />
@@ -15,6 +20,11 @@
     <script type="text/javascript" src="dodecagram.js"></script>
     <script type="text/javascript">
       let synth;
+  
+      // touch & drag doesn't scroll window
+      document.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+      }, false);
 
       const canvas = document.getElementById('canvas');
       const star = new Star(
@@ -39,7 +49,7 @@
           if (star.editMode)
             star.selectOption(parseInt(note / 12), (note + 9) % 12 * 30);
           else
-            star.selectNote((note + 9) % 12);
+            star.selectNote(note);
           return;
         }
         if (e.key === 'Enter')
@@ -53,6 +63,16 @@
         synth = new Synth();
         synth.start();
         star.bind(synth);
+
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+          DeviceMotionEvent.requestPermission()
+            .then(permissionState => {
+              if (permissionState === 'granted')
+                window.addEventListener('deviceorientation', (e) => {star.orientation(e)});
+            });
+        } else {
+          window.addEventListener('deviceorientation', (e) => {star.orientation(e)});
+        }
       }
     </script>
   </body>
