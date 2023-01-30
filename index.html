@@ -40,14 +40,32 @@
         star.click(e);
       });
 
+      const strings = [
+        [0,  'zxcvbnm,./~~'], // sixth string
+        [5,  'asdfghjkl;\'~'], // fifth string, starts on 'a'!
+        [10, 'qwertyuiop[]'],  // fourth string
+        [15, '1234567890-=']  // third string
+      ];
+
+      function getNoteFromKey(key) {
+        for (const [tuning, string] of strings) {
+          const note = string.indexOf(key);
+          if (note >= 0)
+            return note + tuning;
+        }
+        return null
+      }
+
       window.addEventListener('keydown', (e) => {
+      if (e.key === '/' || e.key === '\'')
+        e.preventDefault(); // "quick search" hot keys
+
         startSynth();
-        const keyNotes =
-          '1234567890-=' + // full octave
-          'qwertyuiop[]' + // full octave
-          'asdfghjkl;\'' + // partial
-          'zxcvbnm,./';    // even less
-        const note = keyNotes.indexOf(e.key);
+
+        const note = getNoteFromKey(e.key);console.log(e.key, note)
+        if (note === null)
+          return;
+
         if (note >= 0) {
           if (star.editMode)
             star.selectOption(parseInt(note / 12), (note + 9) % 12 * 30);
