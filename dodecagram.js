@@ -120,7 +120,7 @@ class Synth {
     this.rel = 0.5;
 
     this.out = this.ctx.createGain();
-    this.out.gain.value = 0.25;
+    this.out.gain.value = 0.3;
 
     this.osc1.connect(this.mxr, 0, 0);
     this.osc2.connect(this.mxr, 0, 1);
@@ -142,18 +142,20 @@ class Synth {
     this.osc1.setNote(note);
     this.osc2.setNote(note);
     this.env.gain.linearRampToValueAtTime(1, this.att);
-    this.env.gain.setTargetAtTime(0, this.hold, this.rel);
-  }
-
-  noteLength() {
-    return this.att + this.hold + this.rel;
+    // https://developer.mozilla.org/en-US/docs/Web/API/
+    //   AudioParam/setTargetAtTime#choosing_a_good_timeconstant
+    this.env.gain.setTargetAtTime(0, this.att + this.hold, this.rel / 3);
   }
 }
 
 class Star {
-  constructor(canvas, window) {
+  constructor(canvas, points, window) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+
+    this.points = points;
+    this.pointsCtx = points.getContext('2d');
+
     this.window =  window;
 
     this.editMode = false;
@@ -175,14 +177,14 @@ class Star {
     const d = Math.min(window.innerHeight, window.innerWidth);
     this.canvas.height = d - 30;
     this.canvas.width = this.canvas.height;
+    this.points.height = this.canvas.height;
+    this.points.width = this.canvas.height;
     this.centerX = this.canvas.width / 2;
     this.centerY = this.canvas.height / 2;
     this.r = (this.canvas.width / 2) - 4;
 
     // Gradient for point fill
     this.grd = this.ctx.createRadialGradient(0, 0, this.r / 4, 0, 0, this.r);
-    this.grd.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    this.grd.addColorStop(1, 'rgba(250, 250, 0, 1)');
 
     this.draw();
   }
@@ -194,11 +196,9 @@ class Star {
     // Outer circle
     this.ctx.lineWidth = 4;
     this.ctx.strokeStyle = '#2d002f';
-    this.ctx.fillStyle = 'black';
     this.ctx.beginPath();
     this.ctx.arc(this.centerX, this.centerY, this.r, 0, 2 * Math.PI);
     this.ctx.stroke();
-    this.ctx.fill();
 
     // Star
     this.ctx.strokeStyle = '#ffff00';
@@ -397,25 +397,39 @@ class Star {
   }
 
   selectNote(note) {
-    // Fill point
-    this.ctx.fillStyle = this.grd;
-    this.ctx.save();
-    this.ctx.translate(this.centerX, this.centerY);
-    this.ctx.rotate(Math.PI + (Math.PI * (note + 6) / 6));
-    this.ctx.beginPath();
-    this.ctx.moveTo(0, 0 - this.r);
-    this.ctx.arc(0, 0 - this.r, this.r, 5 * Math.PI / 12, 7 * Math.PI / 12);
-    this.ctx.closePath();
-    this.ctx.fill();
-    this.ctx.restore();
+    // Reset layer
+    this.pointsCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.points.style.transition = 'opacity 0s';
+    this.points.style.opacity = 1;
 
-    // Clear point after release
-    setTimeout(
-      () => {
-        this.draw();
-      },
-      this.synth.noteLength() * 1000
+    // Fill point
+    this.grd.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    this.grd.addColorStop(1, 'rgba(250, 250, 0, 1)');
+    this.pointsCtx.fillStyle = this.grd;
+
+    this.pointsCtx.save();
+    this.pointsCtx.translate(this.centerX, this.centerY);
+    this.pointsCtx.rotate(Math.PI + (Math.PI * (note + 6) / 6));
+    this.pointsCtx.beginPath();
+    this.pointsCtx.moveTo(0, 0 - this.r);
+    this.pointsCtx.arc(
+      0,
+      0 - this.r,
+      this.r,
+      5 * Math.PI / 12,
+      7 * Math.PI / 12
     );
+    this.pointsCtx.closePath();
+    this.pointsCtx.fill();
+    this.pointsCtx.restore();
+
+    // fade out point for release time, after hold time
+    if (this.timeout)
+      clearTimeout(this.timeout);
+    this.timeout = setTimeout(() => {
+      this.points.style.transition = `opacity ${this.synth.rel * 5}s`;
+      this.points.style.opacity = 0;
+    }, this.synth.hold * 1000);
 
     // Play!
     this.synth.hit(note);

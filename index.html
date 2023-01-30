@@ -14,6 +14,7 @@
   <body>
 
     <div style="text-align: center">
+      <canvas id="points"></canvas>
       <canvas id="canvas"></canvas>
     </div>
 
@@ -27,8 +28,10 @@
       }, false);
 
       const canvas = document.getElementById('canvas');
+      const points = document.getElementById('points');
       const star = new Star(
         canvas,
+        points,
         window
       );
 
