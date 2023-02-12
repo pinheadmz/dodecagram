@@ -72,7 +72,7 @@
       const points = document.getElementById('points');
       const star = new Star(canvas, points, window);
 
-      canvas.addEventListener('mouseup', () => {
+      canvas.addEventListener('mouseup', (e) => {
         if (!synth)
           return;
 
@@ -80,6 +80,18 @@
       });
 
       canvas.addEventListener('mousedown', (e) => {
+        startSynth()
+        star.click(e);
+      });
+
+      canvas.addEventListener('touchend', (e) => {
+        if (!synth)
+          return;
+
+        star.release();
+      });
+
+      canvas.addEventListener('touchstart', (e) => {
         startSynth()
         star.click(e);
       });
