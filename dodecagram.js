@@ -93,12 +93,12 @@ class Synth {
       ctx: this.ctx,
       waves: ['sine', 'triangle', 'square']
     });
-    this.osc1.setWave(2);
     this.osc2 = new Osc({
       ctx: this.ctx,
       waves: ['sawtooth', 'triangle', 'square']
     });
-    this.osc1.setOctave(2);
+    this.osc2.setWave(1);
+    this.osc2.setOctave(1);
 
     this.lfo1 = this.ctx.createOscillator();
     this.lfo1.type = 'sine';
@@ -109,18 +109,18 @@ class Synth {
     this.lpf  = this.ctx.createBiquadFilter();
     this.lpf.type = 'lowpass';
     this.lpf.frequency.value = filtFreqs.def;
-    this.lpf.Q.value = 1;
+    this.lpf.Q.value = 5;
 
     this.mxr  = this.ctx.createChannelMerger(2);
 
     this.env = this.ctx.createGain();
     this.env.gain.value = 0;
     this.att = 0.01;
-    this.hold = 0.3;
+    this.hold = 0.0;
     this.rel = 0.5;
 
     this.out = this.ctx.createGain();
-    this.out.gain.value = 0.3;
+    this.out.gain.value = 0.5;
 
     this.osc1.connect(this.mxr, 0, 0);
     this.osc2.connect(this.mxr, 0, 1);
@@ -142,6 +142,9 @@ class Synth {
     this.osc1.setNote(note);
     this.osc2.setNote(note);
     this.env.gain.linearRampToValueAtTime(1, this.att);
+  }
+
+  release() {
     // https://developer.mozilla.org/en-US/docs/Web/API/
     //   AudioParam/setTargetAtTime#choosing_a_good_timeconstant
     this.env.gain.setTargetAtTime(0, this.att + this.hold, this.rel / 3);
@@ -423,15 +426,18 @@ class Star {
     this.pointsCtx.fill();
     this.pointsCtx.restore();
 
+    // Play!
+    this.synth.hit(note);
+  }
+
+  release() {
     // fade out point for release time, after hold time
     if (this.timeout)
       clearTimeout(this.timeout);
+    this.synth.release();
     this.timeout = setTimeout(() => {
       this.points.style.transition = `opacity ${this.synth.rel * 5}s`;
       this.points.style.opacity = 0;
     }, this.synth.hold * 1000);
-
-    // Play!
-    this.synth.hit(note);
   }
 }

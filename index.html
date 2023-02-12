@@ -27,55 +27,27 @@
         e.preventDefault();
       }, false);
 
-      const canvas = document.getElementById('canvas');
-      const points = document.getElementById('points');
-      const star = new Star(
-        canvas,
-        points,
-        window
-      );
-
-      canvas.addEventListener('mousedown', (e) => {
-        startSynth()
-        star.click(e);
-      });
-
       const strings = [
-        [0,  'zxcvbnm,./~~'], // sixth string
+        [0,  'zxcvbnm,./~~'],  // sixth string
         [5,  'asdfghjkl;\'~'], // fifth string, starts on 'a'!
         [10, 'qwertyuiop[]'],  // fourth string
-        [15, '1234567890-=']  // third string
+        [15, '1234567890-=']   // third string
       ];
 
-      function getNoteFromKey(key) {
+      const options =
+        strings[0][1] +
+        strings[1][1] +
+        strings[2][1] +
+        strings[3][1];
+
+      function getNoteAndOptionFromKey(key) {
         for (const [tuning, string] of strings) {
           const note = string.indexOf(key);
           if (note >= 0)
-            return note + tuning;
+            return [note + tuning, options.indexOf(key)];
         }
-        return null
+        return [null, null]
       }
-
-      window.addEventListener('keydown', (e) => {
-      if (e.key === '/' || e.key === '\'')
-        e.preventDefault(); // "quick search" hot keys
-
-        startSynth();
-
-        const note = getNoteFromKey(e.key);console.log(e.key, note)
-        if (note === null)
-          return;
-
-        if (note >= 0) {
-          if (star.editMode)
-            star.selectOption(parseInt(note / 12), (note + 9) % 12 * 30);
-          else
-            star.selectNote(note);
-          return;
-        }
-        if (e.key === 'Enter')
-          star.toggleEditMode();
-      });
 
       function startSynth() {
         if (synth)
@@ -95,6 +67,53 @@
           window.addEventListener('deviceorientation', (e) => {star.orientation(e)});
         }
       }
+
+      const canvas = document.getElementById('canvas');
+      const points = document.getElementById('points');
+      const star = new Star(canvas, points, window);
+
+      canvas.addEventListener('mouseup', () => {
+        if (!synth)
+          return;
+
+        star.release();
+      });
+
+      canvas.addEventListener('mousedown', (e) => {
+        startSynth()
+        star.click(e);
+      });
+
+      window.addEventListener('keyup', () => {
+        if (!synth)
+          return;
+
+        star.release();
+      });
+
+      window.addEventListener('keydown', (e) => {
+      if (e.key === '/' || e.key === '\'')
+        e.preventDefault(); // "quick search" hot keys
+
+        startSynth();
+
+        if (e.key === 'Enter') {
+          star.toggleEditMode();
+          return;
+        }
+
+        const [note, option] = getNoteAndOptionFromKey(e.key);
+        if (note === null)
+          return;
+
+        if (note >= 0) {
+          if (star.editMode)
+            star.selectOption(parseInt(option / 12), (option + 9) % 12 * 30);
+          else
+            star.selectNote(note);
+          return;
+        }
+      });
     </script>
   </body>
 </html>
