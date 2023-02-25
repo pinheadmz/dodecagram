@@ -97,6 +97,7 @@
       canvas.addEventListener('touchstart', (e) => {
         startSynth()
         star.click(e);
+        e.preventDefault();
       });
 
       window.addEventListener('keyup', () => {
