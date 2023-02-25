@@ -431,6 +431,9 @@ class Star {
   }
 
   release() {
+    if (this.editMode)
+      return;
+
     // fade out point for release time, after hold time
     if (this.timeout)
       clearTimeout(this.timeout);
