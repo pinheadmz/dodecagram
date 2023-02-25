@@ -77,11 +77,13 @@
           return;
 
         star.release();
+        e.preventDefault();
       });
 
       canvas.addEventListener('mousedown', (e) => {
         startSynth()
         star.click(e);
+        e.preventDefault();
       });
 
       canvas.addEventListener('touchend', (e) => {
@@ -89,6 +91,7 @@
           return;
 
         star.release();
+        e.preventDefault();
       });
 
       canvas.addEventListener('touchstart', (e) => {
