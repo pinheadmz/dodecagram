@@ -86,19 +86,19 @@
         e.preventDefault();
       });
 
-      // canvas.addEventListener('touchend', (e) => {
-      //   if (!synth)
-      //     return;
+      canvas.addEventListener('touchend', (e) => {
+        if (!synth)
+          return;
 
-      //   star.release();
-      //   e.preventDefault();
-      // });
+        star.release();
+        e.preventDefault();
+      });
 
-      // canvas.addEventListener('touchstart', (e) => {
-      //   startSynth()
-      //   star.click(e);
-      //   e.preventDefault();
-      // });
+      canvas.addEventListener('touchstart', (e) => {
+        startSynth()
+        star.click(e);
+        e.preventDefault();
+      });
 
       window.addEventListener('keyup', () => {
         if (!synth)
