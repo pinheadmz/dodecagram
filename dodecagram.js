@@ -119,6 +119,12 @@ class Synth {
     this.hold = 0.0;
     this.rel = 0.5;
 
+    this.anal = this.ctx.createAnalyser();
+    this.anal.minDecibels = -90;
+    this.anal.maxDecibels = -10;
+    this.anal.smoothingTimeConstant = 0.85;
+    this.anal.fftSize = 2048;
+
     this.out = this.ctx.createGain();
     this.out.gain.value = 0.5;
 
@@ -128,7 +134,8 @@ class Synth {
     this.lfoGain.connect(this.lpf.frequency);
     this.mxr.connect(this.lpf);
     this.lpf.connect(this.env);
-    this.env.connect(this.out);
+    this.env.connect(this.anal);
+    this.anal.connect(this.out);
     this.out.connect(this.ctx.destination);
   }
 
@@ -152,12 +159,17 @@ class Synth {
 }
 
 class Star {
-  constructor(canvas, points, window) {
+  constructor(canvas, points, anal, window) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
 
     this.points = points;
     this.pointsCtx = points.getContext('2d');
+
+    this.anal = anal;
+    this.analctx = this.anal.getContext('2d');
+    this.analH = this.anal.height;
+    this.analW = this.anal.width;
 
     this.window =  window;
 
@@ -168,6 +180,9 @@ class Star {
     this.centerY = 0;
     this.r = 0;
     this.grd = this.ctx.createRadialGradient(0, 0, 0, 0, 0, 0);
+
+    this.analBuff = new Uint8Array();
+    this.drawAnalFrame = this.drawAnalFrame.bind(this);
 
     window.addEventListener('resize', () => {
       this.resize();
@@ -288,6 +303,8 @@ class Star {
 
   bind(synth) {
     this.synth = synth;
+    this.analBuff = new Uint8Array(this.synth.anal.fftSize);
+    this.drawAnalFrame();
   }
 
   toggleEditMode() {
@@ -442,5 +459,38 @@ class Star {
       this.points.style.transition = `opacity ${this.synth.rel * 5}s`;
       this.points.style.opacity = 0;
     }, this.synth.hold * 1000);
+  }
+
+  drawAnalFrame() {
+    requestAnimationFrame(this.drawAnalFrame);
+
+    this.synth.anal.getByteTimeDomainData(this.analBuff);
+
+    this.analctx.fillStyle = '#000000';
+    this.analctx.fillRect(0, 0, this.analW, this.analH);
+
+    this.analctx.lineWidth = 2;
+    this.analctx.strokeStyle = '#f000f0';
+
+    this.analctx.beginPath();
+
+    const sliceWidth = this.analW / this.analBuff.length;
+    let x = 0;
+
+    for (let i = 0; i < this.analBuff.length; i++) {
+      const v = this.analBuff[i] / 128.0;
+      const y = (v * this.analH) / 2;
+
+      if (i === 0) {
+        this.analctx.moveTo(x, y);
+      } else {
+        this.analctx.lineTo(x, y);
+      }
+
+      x += sliceWidth;
+    }
+
+    this.analctx.lineTo(this.analW, this.analH / 2);
+    this.analctx.stroke();
   }
 }

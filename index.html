@@ -12,10 +12,12 @@
     <link rel="stylesheet" type="text/css" href="dodecagram.css" />
   </head>
   <body>
-
-    <div style="text-align: center">
-      <canvas id="points"></canvas>
-      <canvas id="canvas"></canvas>
+    <div id="container">
+      <canvas id="anal"></canvas>
+      <div style="text-align: center" id="ui-container">
+        <canvas id="points" class="canvas-ui"></canvas>
+        <canvas id="canvas" class="canvas-ui"></canvas>
+      </div>
     </div>
 
     <script type="text/javascript" src="dodecagram.js"></script>
@@ -70,7 +72,8 @@
 
       const canvas = document.getElementById('canvas');
       const points = document.getElementById('points');
-      const star = new Star(canvas, points, window);
+      const anal = document.getElementById('anal');
+      const star = new Star(canvas, points, anal, window);
 
       // 'click' counts as a permission-granting gesture on iOS
       canvas.addEventListener('click', (e) => {
