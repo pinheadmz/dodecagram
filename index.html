@@ -72,17 +72,38 @@
       const points = document.getElementById('points');
       const star = new Star(canvas, points, window);
 
+      // 'click' counts as a permission-granting gesture on iOS
+      canvas.addEventListener('click', (e) => {
+        if (synth)
+          return;
+        startSynth();
+      });
+
+
+      /* MOUSE */
+
+      canvas.addEventListener('mousedown', (e) => {
+        if (!synth)
+          return;
+        star.click(e);
+        e.preventDefault();
+      });
+
+      canvas.addEventListener('touchstart', (e) => {
+        if (!synth)
+          return;
+        star.click(e);
+        e.preventDefault();
+      });
+
+
+      /* TOUCH */
+
       canvas.addEventListener('mouseup', (e) => {
         if (!synth)
           return;
 
         star.release();
-        e.preventDefault();
-      });
-
-      canvas.addEventListener('mousedown', (e) => {
-        startSynth()
-        star.click(e);
         e.preventDefault();
       });
 
@@ -94,11 +115,8 @@
         e.preventDefault();
       });
 
-      canvas.addEventListener('touchstart', (e) => {
-        startSynth()
-        star.click(e);
-        e.preventDefault();
-      });
+
+      /* KEYBOARD */
 
       window.addEventListener('keyup', () => {
         if (!synth)
