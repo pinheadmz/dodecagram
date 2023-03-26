@@ -26,7 +26,7 @@ const filtFreqs = {
   min: 100,
   max: 10000,
   inc: 10,
-  def: 100//3700
+  def: 3700
 };
 
 const knobs = {
@@ -188,6 +188,10 @@ class Star {
     this.drawAnalFrame = this.drawAnalFrame.bind(this);
     this.lastFrameTime = Date.now();
 
+    // dodecarange 0-12
+    this.modPos = 0;
+    this.filtPos = 6;
+
     window.addEventListener('resize', () => {
       this.resize();
     });
@@ -245,7 +249,7 @@ class Star {
 
     // Modulation Speed
     {
-      const pct = (modSpeed - modSpeeds.min) / (modSpeeds.max - modSpeeds.min);
+      const pct = this.modPos / 12;
       this.ctx.strokeStyle = '#ff0000';
       this.ctx.save();
       this.ctx.translate(this.centerX, this.centerY);
@@ -258,8 +262,7 @@ class Star {
 
     // Filter Cutoff Frequency
     {
-      const filtFreqPos = Math.sqrt(filtFreq - filtFreqs.min) / filtFreqs.inc;
-      const pct = filtFreqPos / 12;
+      const pct = this.filtPos / 12;
       this.ctx.strokeStyle = '#0000ff';
       this.ctx.save();
       this.ctx.translate(this.centerX, this.centerY);
@@ -402,6 +405,7 @@ class Star {
   }
 
   setModSpeed(opt) {
+    this.modPos = opt;
     if (this.synth) {
       const f = modSpeeds.min + (opt * modSpeeds.inc);
       this.synth.lfo1.frequency.linearRampToValueAtTime(f, 0.001);
@@ -409,6 +413,7 @@ class Star {
   }
 
   setFiltFreq(opt) {
+    this.filtPos = opt;
     if (this.synth) {
       const f = filtFreqs.min + ((opt * filtFreqs.inc) ** 2);
       this.synth.lpf.frequency.linearRampToValueAtTime(f, 0.001);
