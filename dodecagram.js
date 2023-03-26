@@ -321,8 +321,14 @@ class Star {
                         : beta > 90
                           ? 90
                           : beta;
+    // eslint-disable-next-line no-nested-ternary
+    const gammaTrimmed = gamma < -90
+                        ? 90
+                        : gamma > 0
+                          ? 0
+                          : gamma;
     this.setModSpeed((betaTrimmed / 90) * 12);
-    this.setFiltFreq(((gamma + 90) / 180) * 12);
+    this.setFiltFreq((gammaTrimmed / 90) * 12);
 
     this.draw();
   }
