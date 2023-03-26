@@ -17,16 +17,12 @@ const octaves = {
 
 const modSpeeds = {
   min: 0,
-  max: 12,
-  inc: 1,
-  def: 0
+  inc: 1
 };
 
 const filtFreqs = {
   min: 100,
-  max: 10000,
-  inc: 10,
-  def: 3700
+  inc: 5
 };
 
 const knobs = {
@@ -105,14 +101,17 @@ class Synth {
 
     this.lfo1 = this.ctx.createOscillator();
     this.lfo1.type = 'sine';
-    this.lfo1.frequency.value = modSpeeds.def;
     this.lfoGain = this.ctx.createGain();
     this.lfoGain.gain.value = 100;
 
     this.lpf  = this.ctx.createBiquadFilter();
     this.lpf.type = 'lowpass';
-    this.lpf.frequency.value = filtFreqs.def;
     this.lpf.Q.value = 5;
+    // this.lpf.frequency.value = 3700; // ? needed ?
+
+    this.hpf  = this.ctx.createBiquadFilter();
+    this.hpf.type = 'highpass';
+    this.hpf.Q.value = 5;
 
     this.mxr  = this.ctx.createChannelMerger(2);
 
@@ -135,7 +134,8 @@ class Synth {
     this.osc2.connect(this.mxr, 0, 1);
     this.lfo1.connect(this.lfoGain);
     this.lfoGain.connect(this.lpf.frequency);
-    this.mxr.connect(this.lpf);
+    this.mxr.connect(this.hpf);
+    this.hpf.connect(this.lpf);
     this.lpf.connect(this.env);
     this.env.connect(this.anal);
     this.anal.connect(this.out);
@@ -190,7 +190,7 @@ class Star {
 
     // dodecarange 0-12
     this.modPos = 0;
-    this.filtPos = 6;
+    this.filtPos = 0;
 
     window.addEventListener('resize', () => {
       this.resize();
@@ -238,14 +238,6 @@ class Star {
       this.ctx.stroke();
     }
     this.ctx.restore();
-
-    // Get knob values
-    let modSpeed = modSpeeds.def;
-    let filtFreq = filtFreqs.def;
-    if (this.synth) {
-      modSpeed = this.synth.lfo1.frequency.value;
-      filtFreq = this.synth.lpf.frequency.value;
-    }
 
     // Modulation Speed
     {
@@ -310,6 +302,8 @@ class Star {
 
   bind(synth) {
     this.synth = synth;
+    this.setModSpeed(this.modPos);
+    this.setFiltFreq(this.filtPos);
     this.analBuff = new Float32Array(this.synth.anal.fftSize);
     this.drawAnalFrame();
   }
@@ -416,8 +410,7 @@ class Star {
     this.filtPos = opt;
     if (this.synth) {
       const f = filtFreqs.min + ((opt * filtFreqs.inc) ** 2);
-      this.synth.lpf.frequency.linearRampToValueAtTime(f, 0.001);
-      // this.synth.lfoGain.gain.linearRampToValueAtTime(f, 0.001);
+      this.synth.hpf.frequency.linearRampToValueAtTime(f, 0.001);
     }
   }
 
