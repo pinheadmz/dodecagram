@@ -44,9 +44,9 @@
 
       function getNoteAndOptionFromKey(key) {
         for (const [tuning, string] of strings) {
-          const note = string.indexOf(key);
+          const note = string.indexOf(key.toLowerCase());
           if (note >= 0)
-            return [note + tuning, options.indexOf(key)];
+            return [note + tuning, options.indexOf(key.toLowerCase())];
         }
         return [null, null]
       }

@@ -26,7 +26,7 @@ const filtFreqs = {
   min: 100,
   max: 10000,
   inc: 10,
-  def: 3700
+  def: 100//3700
 };
 
 const knobs = {
@@ -39,7 +39,7 @@ class Osc {
   constructor(options) {
     this.ctx = options.ctx;
     this.osc = this.ctx.createOscillator();
-    this.basef = 110; // root
+    this.basef = 55; // root
 
     // Available settings
     this.waves = options.waves;
@@ -48,6 +48,8 @@ class Osc {
     // Current selections
     this.wave = this.waves[0];
     this.octave = this.octaves[0];
+
+    this.thick = options.thick || 0;
   }
 
   setWave(n) {
@@ -61,7 +63,7 @@ class Osc {
 
   setNote(note) {
     const f = this.basef * (2 ** (note / 12));
-    this.osc.frequency.value = f * this.octave;
+    this.osc.frequency.value = (f * this.octave) + this.thick;
   }
 
   connect(dest, output, input) {
@@ -95,7 +97,8 @@ class Synth {
     });
     this.osc2 = new Osc({
       ctx: this.ctx,
-      waves: ['sawtooth', 'triangle', 'square']
+      waves: ['sawtooth', 'triangle', 'square'],
+      thick: 1
     });
     this.osc2.setWave(1);
     this.osc2.setOctave(1);
@@ -104,7 +107,7 @@ class Synth {
     this.lfo1.type = 'sine';
     this.lfo1.frequency.value = modSpeeds.def;
     this.lfoGain = this.ctx.createGain();
-    this.lfoGain.gain.value = modSpeeds.def * 1000;
+    this.lfoGain.gain.value = 100;
 
     this.lpf  = this.ctx.createBiquadFilter();
     this.lpf.type = 'lowpass';
@@ -181,8 +184,9 @@ class Star {
     this.r = 0;
     this.grd = this.ctx.createRadialGradient(0, 0, 0, 0, 0, 0);
 
-    this.analBuff = new Uint8Array();
+    this.analBuff = new Float32Array();
     this.drawAnalFrame = this.drawAnalFrame.bind(this);
+    this.lastFrameTime = Date.now();
 
     window.addEventListener('resize', () => {
       this.resize();
@@ -303,7 +307,7 @@ class Star {
 
   bind(synth) {
     this.synth = synth;
-    this.analBuff = new Uint8Array(this.synth.anal.fftSize);
+    this.analBuff = new Float32Array(this.synth.anal.fftSize);
     this.drawAnalFrame();
   }
 
@@ -399,20 +403,16 @@ class Star {
 
   setModSpeed(opt) {
     if (this.synth) {
-      this.synth.lfo1.frequency.value =
-        modSpeeds.min +
-        (opt * modSpeeds.inc);
-      this.synth.lfoGain.gain.value =
-        modSpeeds.min +
-        (opt * modSpeeds.inc) * 1000;
+      const f = modSpeeds.min + (opt * modSpeeds.inc);
+      this.synth.lfo1.frequency.linearRampToValueAtTime(f, 0.001);
     }
   }
 
   setFiltFreq(opt) {
     if (this.synth) {
-      this.synth.lpf.frequency.value =
-        filtFreqs.min +
-        ((opt * filtFreqs.inc) ** 2);
+      const f = filtFreqs.min + ((opt * filtFreqs.inc) ** 2);
+      this.synth.lpf.frequency.linearRampToValueAtTime(f, 0.001);
+      // this.synth.lfoGain.gain.linearRampToValueAtTime(f, 0.001);
     }
   }
 
@@ -464,7 +464,7 @@ class Star {
   drawAnalFrame() {
     requestAnimationFrame(this.drawAnalFrame);
 
-    this.synth.anal.getByteTimeDomainData(this.analBuff);
+    this.synth.anal.getFloatTimeDomainData(this.analBuff);
 
     this.analctx.fillStyle = '#000000';
     this.analctx.fillRect(0, 0, this.analW, this.analH);
@@ -474,12 +474,14 @@ class Star {
 
     this.analctx.beginPath();
 
-    const sliceWidth = this.analW / this.analBuff.length;
+    const wavelength = this.analBuff.length;
+
+    const sliceWidth = this.analW / wavelength;
     let x = 0;
 
-    for (let i = 0; i < this.analBuff.length; i++) {
-      const v = this.analBuff[i] / 128.0;
-      const y = (v * this.analH) / 2;
+    for (let i = 0; i < wavelength; i++) {
+      const v = this.analBuff[i];
+      const y = ((v * this.analH) * 0.3) + (this.analH / 2);
 
       if (i === 0) {
         this.analctx.moveTo(x, y);
