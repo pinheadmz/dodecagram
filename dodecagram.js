@@ -6,7 +6,7 @@ const waveforms = {
   'sine':     '∿',
   'triangle': '△',
   'square':   '◻︎',
-  'sawtooth': '⩘'
+  'sawtooth': '∠'
 };
 
 const octaves = {
